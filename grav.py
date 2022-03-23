@@ -4,7 +4,7 @@ import sys
 
 class Constants:
     G = 6.67 * 10**-11
-    TimeStep = 0.01
+    TimeStep = 0.005
 
 class Vector2d:
     def __init__(self, x, y):
@@ -40,7 +40,7 @@ class CelestialObject:
         self.position += self.velocity * Constants.TimeStep
 
     def UpdateVelocity(self, otherCelestialObjects):
-        acceleration = Vector2d(0, 0)
+        self.acceleration = Vector2d(0, 0)
         for celestialBody in otherCelestialObjects:
             if celestialBody.position == self.position: continue
             offsetVector = celestialBody.position - self.position
@@ -50,8 +50,8 @@ class CelestialObject:
 
             #print(force, " ", offsetVector.x, " ", offsetVector.y)
 
-            acceleration += side * force
-        self.velocity += acceleration * Constants.TimeStep
+            self.acceleration += side * force
+        self.velocity += self.acceleration * Constants.TimeStep
 
 class Universe:
     def __init__(self):
@@ -63,12 +63,15 @@ class Universe:
     def StartSimulation(self):
         screenWidth = 1500
         screenHeight = 1000
+        simTime = 0
 
         pygame.init()
         window = pygame.display.set_mode((screenWidth, screenHeight))
 
+        myFont = pygame.font.SysFont('Comic Sans MS', 30)
+
         while True:
-            window.fill((64,64,64))
+            window.fill((5,5,5))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -76,19 +79,24 @@ class Universe:
                     sys.exit()
             
             for body in self.bodies:
-                pygame.draw.circle(window, (255, 255, 255), [body.position.x + (screenWidth / 2), body.position.y + (screenHeight / 2)], body.radius, 0)
                 body.UpdateVelocity(self.bodies)
+                pygame.draw.circle(window, (200, 200, 200), [body.position.x + (screenWidth / 2), body.position.y + (screenHeight / 2)], body.radius, 0)
+                pygame.draw.line(window, (255, 0, 0), (body.position.x + (screenWidth / 2), body.position.y + (screenHeight / 2)), (body.position.x + (screenWidth / 2) + body.velocity.x, body.position.y + (screenHeight / 2) + body.velocity.y), 4)
+                pygame.draw.line(window, (0, 128, 255), (body.position.x + (screenWidth / 2), body.position.y + (screenHeight / 2)), (body.position.x + (screenWidth / 2) + body.acceleration.x, body.position.y + (screenHeight / 2) + body.acceleration.y), 4)
 
             for body in self.bodies:
                 body.UpdatePosition()
+
+            simTime += Constants.TimeStep
+
+            textSurface = myFont.render(str(int(simTime)) + "s", False, (200, 200, 200))
+            window.blit(textSurface, (20, 20))
             
             pygame.display.update()
 
 universe = Universe()
-universe.AddBody(CelestialObject(1e14, 10, Vector2d(0, 100), Vector2d(5, 0)))
-universe.AddBody(CelestialObject(1e14, 10, Vector2d(0, -100), Vector2d(-5, 0)))
-universe.AddBody(CelestialObject(1e14, 10, Vector2d(100, 0), Vector2d(0, -5)))
-universe.AddBody(CelestialObject(1e14, 10, Vector2d(-100, 0), Vector2d(0, 5)))
+universe.AddBody(CelestialObject(4e15, 20, Vector2d(300, 0), Vector2d(0, -2)))
+universe.AddBody(CelestialObject(4e15, 20, Vector2d(-300, 0), Vector2d(0, 2)))
 universe.StartSimulation()
 
 input()
